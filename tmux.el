@@ -13,6 +13,9 @@
 
 ;;; Code:
 
+(eval-when-compile
+  (require 'project)
+  (require 'savehist))
 
 (defgroup tmux nil
   "Tmux stuff."
