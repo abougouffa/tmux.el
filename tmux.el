@@ -157,14 +157,14 @@ command."
 ;; Evil integration
 
 (with-eval-after-load 'evil
-;;;###autoload (autoload 'evil-tmux-run "tools/tmux/autoload/evil" nil t)
+;;;###autoload (autoload 'evil-tmux-run "tmux" nil t)
   (evil-define-command evil-tmux-run (bang &optional command)
     (interactive "<!><fsh>")
     (if (evil-visual-state-p)
         (tmux-send-region evil-visual-beginning evil-visual-end bang)
       (tmux-run command bang)))
 
-;;;###autoload (autoload 'evil-tmux-cd-here "tools/tmux/autoload/evil" nil t)
+;;;###autoload (autoload 'evil-tmux-cd-here "tmux" nil t)
   (evil-define-command evil-tmux-cd-here (bang)
     (interactive "<!>")
     (if bang (tmux-cd-to-here) (tmux-cd-to-project))))
