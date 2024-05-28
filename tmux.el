@@ -28,6 +28,11 @@ If nil, use the built-in `project-root'."
   :group 'tmux
   :type '(choice function (symbol nil)))
 
+(defcustom tmux-verbose nil
+  "Enable verbose mode."
+  :group 'tmux
+  :type 'boolean)
+
 ;;
 ;; Internals
 
@@ -62,21 +67,20 @@ Respects `tmux-project-root-function'."
       (error "Could not find tmux executable"))
     (let* ((args (mapcar #'shell-quote-argument (delq nil args)))
            (cmdstr (format "%s %s" bin (if args (apply #'format command args) command)))
-           (output (get-buffer-create " *tmux stdout*"))
-           (errors (get-buffer-create " *tmux stderr*"))
-           code)
+           (stdout (get-buffer-create " *tmux stdout*"))
+           (stderr (get-buffer-create " *tmux stderr*")))
       (unwind-protect
-          (if (= 0 (setq code (+shutup! (shell-command cmdstr output errors))))
-              (with-current-buffer output
+          (if (zerop (setq tmux-last-retcode
+                           (let ((message-log-max (and tmux-verbose message-log-max)))
+                             (if tmux-verbose
+                                 (shell-command cmdstr stdout stderr)
+                               (with-temp-message (or (current-message) "")
+                                 (shell-command cmdstr stdout stderr))))))
+              (with-current-buffer stdout
                 (setq tmux-last-command `(,(substring cmdstr (+ 1 (length bin))) ,@args))
                 (buffer-string))
-            (error "[%d] tmux $ %s (%s)"
-                   code
-                   (with-current-buffer errors
-                     (buffer-string))
-                   cmdstr))
-        (and (kill-buffer output)
-             (kill-buffer errors))))))
+            (error "[%d] tmux $ %s (%s)" tmux-last-retcode (with-current-buffer stderr (buffer-string)) cmdstr))
+        (and (kill-buffer stdout) (kill-buffer stderr))))))
 
 ;;;###autoload
 (defun tmux-run (command &optional noreturn)
