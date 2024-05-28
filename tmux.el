@@ -37,6 +37,12 @@ If nil, use the built-in `project-root'."
 (defvar tmux-last-retcode nil
   "The last tmux return code.")
 
+(defvar tmux-command-history '()
+  "Command history.")
+
+(with-eval-after-load 'savehist
+  (add-to-list 'savehist-additional-variables 'tmux-command-history))
+
 (defun tmux-project-root ()
   "Return the root directory of the current project.
 
@@ -77,7 +83,7 @@ Respects `tmux-project-root-function'."
   "Run COMMAND in tmux.
 
 If NORETURN is non-nil, send the commands as keypresses but do not execute them."
-  (interactive (list (read-string "tmux $ ") current-prefix-arg))
+  (interactive (list (read-string "tmux $ " nil 'tmux-command-history) current-prefix-arg))
   (tmux (concat "send-keys C-u " (shell-quote-argument command) (unless noreturn " Enter"))))
 
 ;;;###autoload
