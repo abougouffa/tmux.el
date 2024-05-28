@@ -18,11 +18,32 @@
   "Tmux stuff."
   :group 'tools)
 
+;;
+;; Custom variables
+
+(defcustom tmux-project-root-function nil
+  "The function to use for detecting the project root.
+
+If nil, use the built-in `project-root'."
+  :group 'tmux
+  :type '(choice function (symbol nil)))
+
+;;
+;; Internals
+
 (defvar tmux-last-command nil
   "The last command ran by `tmux'. Used by `tmux-rerun'.")
 
 (defvar tmux-last-retcode nil
   "The last tmux return code.")
+
+(defun tmux-project-root ()
+  "Return the root directory of the current project.
+
+Respects `tmux-project-root-function'."
+  (if (fboundp tmux-project-root-function)
+      (funcall tmux-project-root-function)
+    (when-let ((proj (project-current))) (project-root proj))))
 
 ;;
 ;; Commands
@@ -79,26 +100,25 @@ NORETURN, see `tmux-run'."
 (defun tmux-cd (&optional directory noreturn)
   "Change the pwd of the currently active tmux pane to DIRECTORY.
 
-DIRECTORY defaults to `default-directory' if omitted, or to `project-root'
+DIRECTORY defaults to `default-directory' if omitted, or to `tmux-project-root'
 if prefix arg is non-nil.
 
 If NORETURN is non-nil, send the cd command to tmux, but do not execute the
 command."
   (interactive "D")
-  (tmux-run (format "cd %S" (expand-file-name (or directory (if current-prefix-arg (when-let ((proj (project-current))) (project-root proj)) default-directory)))) noreturn))
+  (tmux-run (format "cd %S" (expand-file-name (or directory (if current-prefix-arg (tmux-project-root) default-directory)))) noreturn))
 
 ;;;###autoload
 (defun tmux-cd-to-here ()
-  "cd into `default-directory' in tmux."
+  "Call \"cd\" into `default-directory' in tmux."
   (interactive)
   (tmux-cd default-directory))
 
 ;;;###autoload
 (defun tmux-cd-to-project ()
-  "cd into `project-root' in tmux."
+  "Call \"cd\" into the current project's root directory in tmux."
   (interactive)
-  (tmux-cd (when-let ((proj (project-current))) (project-root proj))))
-
+  (tmux-cd (tmux-project-root)))
 
 ;;
 ;; Data functions
